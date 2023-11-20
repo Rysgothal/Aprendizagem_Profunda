@@ -1,61 +1,68 @@
-import numpy as np
-import tensorflow as tf
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score,confusion_matrix
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
+import tensorflow as tf
 
+# import numpy as np
+# from sklearn.preprocessing import LabelEncoder
+# from sklearn.model_selection import train_test_split
+# from sklearn.metrics import accuracy_score,confusion_matrix
+# import seaborn as sns
+# import pandas as pd
+# import matplotlib.pyplot as plt
 
-def load_language_dataset(folder_path):
-    texts = []
-    labels = []
+def CarregarLinguagemDataSet(pCaminho):
+    lFrases = []
+    lLinguas = []
 
-    for category in os.listdir(folder_path):
-        category_path = os.path.join(folder_path, category)
-        if os.path.isdir(category_path):
-            for file_name in os.listdir(category_path):
-                file_path = os.path.join(category_path, file_name)
-                if os.path.isfile(file_path):
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        text = file.read()
-                        texts.append(text)
-                        labels.append(category)
+    for lCategoria in os.listdir(pCaminho):
+        lCaminhoCategoria = os.path.join(pCaminho, lCategoria)
 
-    return texts, labels
-# Carregando o dataset de treinamento
-train_folder_path = "Textos/train"
-train_texts, train_labels = load_language_dataset(train_folder_path)
+        if not os.path.isdir(lCaminhoCategoria):
+            continue
+        
+        for lNomeArquivo in os.listdir(lCaminhoCategoria):
+            lCaminhoArquivo = os.path.join(lCaminhoCategoria, lNomeArquivo)
 
-# Carregando o dataset de teste
-test_folder_path = "Textos/test"
-test_texts, test_labels = load_language_dataset(test_folder_path)
+            if not os.path.isfile(lCaminhoArquivo):
+                continue
+            
+            with open(lCaminhoArquivo, 'r', encoding = 'utf-8') as lArquivo:
+                lFrases.append(lArquivo.read())
+                lLinguas.append(lCategoria)
+    
+    return lFrases, lLinguas
 
+lCaminhoRaiz = os.path.abspath(os.path.dirname(__file__))
+lCaminhoTreino = lCaminhoRaiz + '/Textos/train'
+lCaminhoTeste = lCaminhoRaiz + '/Textos/test'
 
-# Combine os textos e rótulos de treinamento e teste
-texts = train_texts + test_texts
-labels = train_labels + test_labels
+lTreinoFrases, lTreinoLinguas = CarregarLinguagemDataSet(lCaminhoTreino) # Carregando o dataset de treinamento
+lTesteTextos, lTesteLinguas = CarregarLinguagemDataSet(lCaminhoTeste)    # Carregando o dataset de teste
+
+# Combinando os textos e rótulos do treinamento e teste
+lTextos = lTreinoFrases + lTesteTextos
+lLinguas = lTreinoLinguas + lTesteLinguas
+
 # Pré-processamento de texto
-tokenizer = tf.keras.layers.TextVectorization(max_tokens=20000, output_mode="int")
-tokenizer.adapt(texts)
-sequences = tokenizer(texts)
+lTokenizacaoTexto = tf.keras.layers.TextVectorization(max_tokens = 20000, output_mode = 'int')
+lTokenizacaoTexto.adapt(lTextos)
+##asdasdas Parei aQ
+
+sequences = lTokenizacaoTexto(lTextos)
 # Pré-processamento dos dados de teste
-sequences_train = tokenizer(np.array(train_texts)).numpy()
-sequences_test = tokenizer(np.array(test_texts)).numpy()
+sequences_train = lTokenizacaoTexto(np.array(lTreinoFrases)).numpy()
+sequences_test = lTokenizacaoTexto(np.array(lTesteTextos)).numpy()
 max_length = max(len(seq) for seq in sequences_train)
 sequences_train = tf.keras.preprocessing.sequence.pad_sequences(sequences_train, maxlen=max_length, padding='post')
 sequences_test = tf.keras.preprocessing.sequence.pad_sequences(sequences_test, maxlen=max_length, padding='post')
 # Tamanho do vocabulário
-vocab_size = len(tokenizer.get_vocabulary())
+vocab_size = len(lTokenizacaoTexto.get_vocabulary())
 # Codificação das etiquetas
 label_encoder = LabelEncoder()
-label_encoder.fit(train_labels)
-labels_test_encoded = label_encoder.transform(test_labels)
-labels_encoded = label_encoder.fit_transform(labels)
-labels_train_encoded = label_encoder.transform(train_labels)
-sequences_train = tokenizer(train_texts)
+label_encoder.fit(lTreinoLinguas)
+lLinguas_test_encoded = label_encoder.transform(lTesteLinguas)
+lLinguas_encoded = label_encoder.fit_transform(lLinguas)
+lLinguas_train_encoded = label_encoder.transform(lTreinoLinguas)
+sequences_train = lTokenizacaoTexto(lTreinoFrases)
 max_length = max(len(seq) for seq in sequences_train)
 
 sequences_train = tf.keras.preprocessing.sequence.pad_sequences(sequences_train, maxlen=max_length, padding='post')
@@ -65,8 +72,8 @@ sequences_test = tf.keras.preprocessing.sequence.pad_sequences(sequences_test, m
 sequences = sequences.numpy()
 
 # # Divisão dos dados em treinamento, validação e teste como arrays NumPy
-# X_train, X_temp, y_train, y_temp = train_test_split(sequences, labels_encoded, test_size=0.2, random_state=1)
-# X_train, X_test, y_train, y_test = train_test_split(sequences_train.numpy(), labels_train_encoded, test_size=0.6, random_state=1)
+# X_train, X_temp, y_train, y_temp = train_test_split(sequences, lLinguas_encoded, test_size=0.2, random_state=1)
+# X_train, X_test, y_train, y_test = train_test_split(sequences_train.numpy(), lLinguas_train_encoded, test_size=0.6, random_state=1)
 
 
 def plot_loss(history, model_name):
@@ -96,24 +103,24 @@ model_dropout.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32,
 model_dropout.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
 model_dropout.add(tf.keras.layers.Dense(64, activation='relu'))
 model_dropout.add(tf.keras.layers.Dropout(0.5))
-model_dropout.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+model_dropout.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
 model_dropout.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # Treine o modelo usando as sequências de treinamento e rótulos codificados
-history_dropout = model_dropout.fit(sequences_train, labels_train_encoded, epochs=500, batch_size=1, validation_data=(sequences_test, labels_test_encoded))
+history_dropout = model_dropout.fit(sequences_train, lLinguas_train_encoded, epochs=500, batch_size=1, validation_data=(sequences_test, lLinguas_test_encoded))
 
 # Avaliação do modelo usando os dados de teste
 y_pred_dropout = model_dropout.predict(sequences_test)
 y_pred_classes_dropout = np.argmax(y_pred_dropout, axis=1)
-accuracy_dropout = accuracy_score(labels_test_encoded, y_pred_classes_dropout)
+accuracy_dropout = accuracy_score(lLinguas_test_encoded, y_pred_classes_dropout)
 print(f"Acurácia do modelo ANNs com dropout: {accuracy_dropout}")
 
 # Plote o gráfico de perda e a matriz de confusão
 plot_loss(history_dropout, 'ANN Dropout Model')
 # Exemplo de uso
-unique_classes = np.unique(labels)
+unique_classes = np.unique(lLinguas)
 print("classes:", unique_classes)
-confusion_mat = confusion_matrix(labels_test_encoded, y_pred_classes_dropout, normalize='true')
+confusion_mat = confusion_matrix(lLinguas_test_encoded, y_pred_classes_dropout, normalize='true')
 print("matriz:", confusion_mat)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN Dropout Model')
 
@@ -130,7 +137,7 @@ for ann_units in ann_units_list:
     model_ann.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=len(sequences[0])))
     model_ann.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
     model_ann.add(tf.keras.layers.Dense(ann_units, activation='relu'))
-    model_ann.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+    model_ann.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
     model_ann.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     
     # Treine o modelo
@@ -142,7 +149,7 @@ for ann_units in ann_units_list:
     print(f"Acurácia do modelo ANNs ({ann_units}): {accuracy}")
     # Plote o gráfico de perda e a matriz de confusão
     plot_loss(history_ann, 'ANN Model')
-    unique_classes = np.unique(labels)
+    unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN Model')
     # Salve o modelo com um nome indicando a variação do hiperparâmetro
@@ -154,7 +161,7 @@ model_lstm = tf.keras.Sequential()
 model_lstm.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=len(sequences[0])))
 model_lstm.add(tf.keras.layers.LSTM(64, return_sequences=True))  # Camada LSTM
 model_lstm.add(tf.keras.layers.GlobalMaxPooling1D())  # Camada de pooling
-model_lstm.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+model_lstm.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
 model_lstm.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 # Treine o modelo LSTM
@@ -166,7 +173,7 @@ y_pred_classes_lstm = np.argmax(y_pred_lstm, axis=1)
 accuracy_lstm = accuracy_score(y_test, y_pred_classes_lstm)
 print(f"Acurácia do modelo ANNs com LSTM: {accuracy_lstm}")
 plot_loss(history_ann_lstm, 'ANN LSTM Model')
-unique_classes = np.unique(labels)
+unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_lstm)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN LSTM Model')
 model_lstm.save('modelANNs_lstm.keras')
@@ -181,7 +188,7 @@ for num_filters in num_filters_list:
     model_cnn.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=len(sequences[0])))
     model_cnn.add(tf.keras.layers.Conv1D(num_filters, 5, activation='relu'))
     model_cnn.add(tf.keras.layers.GlobalMaxPooling1D())
-    model_cnn.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+    model_cnn.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
     model_cnn.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Treine o modelo
@@ -193,7 +200,7 @@ for num_filters in num_filters_list:
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN ({num_filters} filtros): {accuracy}")
     plot_loss(history_cnn_filter, 'CNN Filter Model')
-    unique_classes = np.unique(labels)
+    unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Model')
     
@@ -210,7 +217,7 @@ for filter_size in filter_sizes_list:
     model_filter_size.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=len(sequences[0])))
     model_filter_size.add(tf.keras.layers.Conv1D(128, filter_size, activation='relu'))  # Varie o tamanho do filtro conforme desejado
     model_filter_size.add(tf.keras.layers.GlobalMaxPooling1D())
-    model_filter_size.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+    model_filter_size.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
     model_filter_size.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Treine o modelo
@@ -225,7 +232,7 @@ for filter_size in filter_sizes_list:
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN (filtro de tamanho {filter_size}): {accuracy}")
     plot_loss(history_cnn_filter_size, 'CNN Filter Size Model')
-    unique_classes = np.unique(labels)
+    unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Size Model')
     
@@ -239,7 +246,7 @@ for filter_stride in filter_stride_list:
     model_filter_stride.add(tf.keras.layers.Embedding(input_dim=vocab_size, output_dim=32, input_length=len(sequences[0])))
     model_filter_stride.add(tf.keras.layers.Conv1D(128, 5, strides=filter_stride, activation='relu'))  # Varie o tamanho do passo conforme desejado
     model_filter_stride.add(tf.keras.layers.GlobalMaxPooling1D())
-    model_filter_stride.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+    model_filter_stride.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
     model_filter_stride.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Treine o modelo
@@ -254,7 +261,7 @@ for filter_stride in filter_stride_list:
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN (passo de tamanho {filter_stride}): {accuracy}")
     plot_loss(history_cnn_filter_stride,'CNN Filter Stride Model')
-    unique_classes = np.unique(labels)
+    unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Stride Model')
 
@@ -268,7 +275,7 @@ model_layers.add(tf.keras.layers.Input(shape=(len(sequences[0]),)))  # Altere o 
 model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
 model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
 model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
-model_layers.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+model_layers.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
 model_layers.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 # Treine e avalie o modelo model_layers
 history_dnn_ocult=model_layers.fit(X_train, y_train, epochs=500, batch_size=1, validation_data=(X_test, y_test))
@@ -277,7 +284,7 @@ y_pred_classes_layers = np.argmax(y_pred_layers, axis=1)
 accuracy_layers = accuracy_score(y_test, y_pred_classes_layers)
 print(f"Acurácia do modelo model_layers: {accuracy_layers}")
 plot_loss(history_dnn_ocult, 'DNN Ocult Model')
-unique_classes = np.unique(labels)
+unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_layers)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Ocult Model')
 # Salve o modelo model_layers no diretório atual
@@ -290,7 +297,7 @@ modelDNN.add(tf.keras.layers.Input(shape=(len(sequences[0]),)))  # Altere o tama
 modelDNN.add(tf.keras.layers.Dense(64, activation='relu'))
 modelDNN.add(tf.keras.layers.Dense(64, activation='tanh'))  # Varie a função de ativação conforme desejado
 modelDNN.add(tf.keras.layers.Dense(64, activation='sigmoid'))
-modelDNN.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+modelDNN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
 modelDNN.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 # Treine e avalie o modelo modelDNN
 history_dnn_ocult_ativation=modelDNN.fit(X_train, y_train, epochs=500, batch_size=1, validation_data=(X_test, y_test))
@@ -300,7 +307,7 @@ y_pred_classes_dnn = np.argmax(y_pred_dnn, axis=1)
 accuracy_dnn = accuracy_score(y_test, y_pred_classes_dnn)
 print(f"Acurácia do modelo modelDNN: {accuracy_dnn}")
 plot_loss(history_dnn_ocult_ativation, 'DNN Ocult Ativation Model')
-unique_classes = np.unique(labels)
+unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_dnn)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Ocult Ativation Model')
 
@@ -313,7 +320,7 @@ modelDNN4 = tf.keras.Sequential(name="modelDNN4")
 modelDNN4.add(tf.keras.layers.Input(shape=(len(sequences[0]),)))  # Ajuste o tamanho da sequência de acordo
 modelDNN4.add(tf.keras.layers.Dense(64, activation='relu'))  # Mantenha o número de unidades
 modelDNN4.add(tf.keras.layers.Dense(64, activation='relu'))  # Mantenha o número de unidades
-modelDNN4.add(tf.keras.layers.Dense(len(set(labels)), activation='softmax'))
+modelDNN4.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
 
 # Configuração personalizada do otimizador com taxa de aprendizado
 custom_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
@@ -326,7 +333,7 @@ y_pred_classes = np.argmax(y_pred, axis=1)
 accuracy = accuracy_score(y_test, y_pred_classes)
 print(f"Acurácia do modelo modelDNN4: {accuracy}")
 plot_loss(history_dnn_rate_learn, 'DNN Rate Learn Model')
-unique_classes = np.unique(labels)
+unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Rate Learn Model')
 

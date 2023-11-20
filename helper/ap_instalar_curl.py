@@ -1,5 +1,4 @@
 # Verifica se o pacote Curl está presente no ambiente
-
 import subprocess
 
 def InstalarCurl():

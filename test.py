@@ -2,7 +2,7 @@ import time
 import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from Refatorando.Helper.ap_treinamento import *
+from Treinamento import *
 # Carregar o conjunto de dados de teste (substitua 'dataset_teste.txt' pelo caminho do arquivo de teste real)
 file_path_test = "dataset_test.txt"
 texts_test, labels_test = load_language_dataset(file_path_test)

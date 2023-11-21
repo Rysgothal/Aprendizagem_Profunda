@@ -1,13 +1,13 @@
 import os
 import tensorflow as tf
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
-# import numpy as np
-# from sklearn.preprocessing import LabelEncoder
 # from sklearn.model_selection import train_test_split
 # from sklearn.metrics import accuracy_score,confusion_matrix
-# import seaborn as sns
-# import pandas as pd
-# import matplotlib.pyplot as plt
 
 def CarregarLinguagemDataSet(pCaminho):
     lFrases = []
@@ -45,54 +45,52 @@ lLinguas = lTreinoLinguas + lTesteLinguas
 # Pré-processamento de texto
 lTokenizacaoTexto = tf.keras.layers.TextVectorization(max_tokens = 20000, output_mode = 'int')
 lTokenizacaoTexto.adapt(lTextos)
-##asdasdas Parei aQ
 
-sequences = lTokenizacaoTexto(lTextos)
+lSequencias = lTokenizacaoTexto(lTextos)
 # Pré-processamento dos dados de teste
-sequences_train = lTokenizacaoTexto(np.array(lTreinoFrases)).numpy()
-sequences_test = lTokenizacaoTexto(np.array(lTesteTextos)).numpy()
-max_length = max(len(seq) for seq in sequences_train)
-sequences_train = tf.keras.preprocessing.sequence.pad_sequences(sequences_train, maxlen=max_length, padding='post')
-sequences_test = tf.keras.preprocessing.sequence.pad_sequences(sequences_test, maxlen=max_length, padding='post')
-# Tamanho do vocabulário
-vocab_size = len(lTokenizacaoTexto.get_vocabulary())
-# Codificação das etiquetas
-label_encoder = LabelEncoder()
-label_encoder.fit(lTreinoLinguas)
-lLinguas_test_encoded = label_encoder.transform(lTesteLinguas)
-lLinguas_encoded = label_encoder.fit_transform(lLinguas)
-lLinguas_train_encoded = label_encoder.transform(lTreinoLinguas)
-sequences_train = lTokenizacaoTexto(lTreinoFrases)
-max_length = max(len(seq) for seq in sequences_train)
+lSequenciasTreino = lTokenizacaoTexto(np.array(lTreinoFrases)).numpy()
+lSequenciasTeste = lTokenizacaoTexto(np.array(lTesteTextos)).numpy()
+lTamanhoMaximo = max(len(seq) for seq in lSequenciasTreino)
 
-sequences_train = tf.keras.preprocessing.sequence.pad_sequences(sequences_train, maxlen=max_length, padding='post')
-sequences_test = tf.keras.preprocessing.sequence.pad_sequences(sequences_test, maxlen=max_length, padding='post')
+lSequenciasTreino = tf.keras.preprocessing.sequence.pad_sequences(lSequenciasTreino, maxlen = lTamanhoMaximo, padding='post')
+lSequenciasTeste = tf.keras.preprocessing.sequence.pad_sequences(lSequenciasTeste, maxlen = lTamanhoMaximo, padding='post')
+
+# Tamanho do vocabulário
+lTamanhoVocabulario = len(lTokenizacaoTexto.get_vocabulary())
+
+# Codificação das etiquetas
+lLiguaCodificador = LabelEncoder()
+lLiguaCodificador.fit(lTreinoLinguas)
+lLinguasTesteCodificado = lLiguaCodificador.transform(lTesteLinguas)
+lLinguasTreinoEncodificado = lLiguaCodificador.transform(lTreinoLinguas)
+lLinguasEncodificado = lLiguaCodificador.fit_transform(lLinguas)
+
+lSequenciasTreino = lTokenizacaoTexto(lTreinoFrases)
+lTamanhoMaximo = max(len(seq) for seq in lSequenciasTreino)
+
+lSequenciasTreino = tf.keras.preprocessing.sequence.pad_sequences(lSequenciasTreino, maxlen=lTamanhoMaximo, padding='post')
+lSequenciasTeste = tf.keras.preprocessing.sequence.pad_sequences(lSequenciasTeste, maxlen=lTamanhoMaximo, padding='post')
 
 # Converte o tensor sequences em um array NumPy
-sequences = sequences.numpy()
+lSequencias = lSequencias.numpy()
 
-# # Divisão dos dados em treinamento, validação e teste como arrays NumPy
-# X_train, X_temp, y_train, y_temp = train_test_split(sequences, lLinguas_encoded, test_size=0.2, random_state=1)
-# X_train, X_test, y_train, y_test = train_test_split(sequences_train.numpy(), lLinguas_train_encoded, test_size=0.6, random_state=1)
-
-
-def plot_loss(history, model_name):
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='validation')
-    plt.title(f'{model_name} - Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
+def MostrarPerdaPlot(pHistorico, pNomeModelo):
+    plt.plot(pHistorico.history['loss'], label = 'Treino')
+    plt.plot(pHistorico.history['val_loss'], label = 'Validação')
+    plt.title(f'{pNomeModelo} - Perda')
+    plt.xlabel('Épocas')
+    plt.ylabel('Perda')
     plt.legend()
     plt.show()
     
-def plot_confusion_matrix(cm, classes, model_name):
-    cm_df = pd.DataFrame(cm, index=classes[:len(cm)], columns=classes[:len(cm)])
+def MostrarMatrizConfusãoPlot(pMedidaCM, pClasses, pNomeModelo):
+    cm_df = pd.DataFrame(pMedidaCM, index = pClasses[:len(pMedidaCM)], columns = pClasses[:len(pMedidaCM)])
     
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm_df, annot=True, fmt='g', cmap='Blues')
-    plt.title(f'{model_name} - Confusion Matrix')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
+    plt.figure(figsize = (10, 8))
+    sns.heatmap(cm_df, annot = True, fmt = 'g', cmap = 'Blues')
+    plt.title(f'{pNomeModelo} - Confusion Matrix')
+    plt.xlabel('Predição')
+    plt.ylabel('Lingua')
     plt.show()
 
     
@@ -116,13 +114,13 @@ accuracy_dropout = accuracy_score(lLinguas_test_encoded, y_pred_classes_dropout)
 print(f"Acurácia do modelo ANNs com dropout: {accuracy_dropout}")
 
 # Plote o gráfico de perda e a matriz de confusão
-plot_loss(history_dropout, 'ANN Dropout Model')
+MostrarPerda(history_dropout, 'ANN Dropout Model')
 # Exemplo de uso
 unique_classes = np.unique(lLinguas)
 print("classes:", unique_classes)
 confusion_mat = confusion_matrix(lLinguas_test_encoded, y_pred_classes_dropout, normalize='true')
 print("matriz:", confusion_mat)
-plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN Dropout Model')
+MostrarMatrizConfusãoPlot(confusion_mat, classes=unique_classes, model_name='ANN Dropout Model')
 
 model_dropout.save('modelANNs_dropout.keras')
 
@@ -148,7 +146,7 @@ for ann_units in ann_units_list:
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo ANNs ({ann_units}): {accuracy}")
     # Plote o gráfico de perda e a matriz de confusão
-    plot_loss(history_ann, 'ANN Model')
+    MostrarPerda(history_ann, 'ANN Model')
     unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN Model')
@@ -172,7 +170,7 @@ y_pred_lstm = model_lstm.predict(X_test)
 y_pred_classes_lstm = np.argmax(y_pred_lstm, axis=1)
 accuracy_lstm = accuracy_score(y_test, y_pred_classes_lstm)
 print(f"Acurácia do modelo ANNs com LSTM: {accuracy_lstm}")
-plot_loss(history_ann_lstm, 'ANN LSTM Model')
+MostrarPerda(history_ann_lstm, 'ANN LSTM Model')
 unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_lstm)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='ANN LSTM Model')
@@ -199,7 +197,7 @@ for num_filters in num_filters_list:
     y_pred_classes = np.argmax(y_pred, axis=1)
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN ({num_filters} filtros): {accuracy}")
-    plot_loss(history_cnn_filter, 'CNN Filter Model')
+    MostrarPerda(history_cnn_filter, 'CNN Filter Model')
     unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Model')
@@ -231,7 +229,7 @@ for filter_size in filter_sizes_list:
     y_pred_classes = np.argmax(y_pred, axis=1)
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN (filtro de tamanho {filter_size}): {accuracy}")
-    plot_loss(history_cnn_filter_size, 'CNN Filter Size Model')
+    MostrarPerda(history_cnn_filter_size, 'CNN Filter Size Model')
     unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Size Model')
@@ -260,7 +258,7 @@ for filter_stride in filter_stride_list:
     y_pred_classes = np.argmax(y_pred, axis=1)
     accuracy = accuracy_score(y_test, y_pred_classes)
     print(f"Acurácia do modelo CNN (passo de tamanho {filter_stride}): {accuracy}")
-    plot_loss(history_cnn_filter_stride,'CNN Filter Stride Model')
+    MostrarPerda(history_cnn_filter_stride,'CNN Filter Stride Model')
     unique_classes = np.unique(lLinguas)
     confusion_mat = confusion_matrix(y_test, y_pred_classes)
     plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='CNN Filter Stride Model')
@@ -283,7 +281,7 @@ y_pred_layers = model_layers.predict(X_test)
 y_pred_classes_layers = np.argmax(y_pred_layers, axis=1)
 accuracy_layers = accuracy_score(y_test, y_pred_classes_layers)
 print(f"Acurácia do modelo model_layers: {accuracy_layers}")
-plot_loss(history_dnn_ocult, 'DNN Ocult Model')
+MostrarPerda(history_dnn_ocult, 'DNN Ocult Model')
 unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_layers)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Ocult Model')
@@ -306,7 +304,7 @@ y_pred_dnn = modelDNN.predict(X_test)
 y_pred_classes_dnn = np.argmax(y_pred_dnn, axis=1)
 accuracy_dnn = accuracy_score(y_test, y_pred_classes_dnn)
 print(f"Acurácia do modelo modelDNN: {accuracy_dnn}")
-plot_loss(history_dnn_ocult_ativation, 'DNN Ocult Ativation Model')
+MostrarPerda(history_dnn_ocult_ativation, 'DNN Ocult Ativation Model')
 unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes_dnn)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Ocult Ativation Model')
@@ -332,7 +330,7 @@ y_pred = modelDNN4.predict(X_test)
 y_pred_classes = np.argmax(y_pred, axis=1)
 accuracy = accuracy_score(y_test, y_pred_classes)
 print(f"Acurácia do modelo modelDNN4: {accuracy}")
-plot_loss(history_dnn_rate_learn, 'DNN Rate Learn Model')
+MostrarPerda(history_dnn_rate_learn, 'DNN Rate Learn Model')
 unique_classes = np.unique(lLinguas)
 confusion_mat = confusion_matrix(y_test, y_pred_classes)
 plot_confusion_matrix(confusion_mat, classes=unique_classes, model_name='DNN Rate Learn Model')

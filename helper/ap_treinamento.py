@@ -26,11 +26,11 @@ def load_language_dataset(folder_path):
 
     return texts, labels
 # Carregando o dataset de treinamento
-train_folder_path = "helper/Textos/train"
+train_folder_path = os.path.dirname(os.path.realpath(__file__)) + "/Textos/train"
 train_texts, train_labels = load_language_dataset(train_folder_path)
 
 # Carregando o dataset de teste
-test_folder_path = "helper/Textos/test"
+test_folder_path = os.path.dirname(os.path.realpath(__file__)) + "/Textos/train"
 test_texts, test_labels = load_language_dataset(test_folder_path)
 
 

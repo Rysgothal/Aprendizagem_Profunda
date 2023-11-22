@@ -3,14 +3,6 @@ import matplotlib.pyplot as plt
 
 class Helper():
     def CriarPasta(pDiretorioDestino: str):
-        """Função onde cria uma pasta
-
-        Args:
-            pDiretorioDestino (str): Caminho onde a pasta vai ser criada
-
-        Returns:
-            lDestino (str): Local onde a pasta foi criada
-        """
         os.makedirs(pDiretorioDestino, exist_ok = True)  
         lDestino = pDiretorioDestino 
         return lDestino
@@ -23,3 +15,8 @@ class Helper():
         plt.ylabel('Perda')
         plt.legend()
         plt.show()
+    
+    def DiretorioAtual():
+        lDiretorio = os.path.dirname(os.path.realpath(__file__)) 
+        return os.path.dirname(lDiretorio)      
+    

@@ -1,12 +1,11 @@
 import subprocess
-import sys
 
 FErros = []
 
 # Função para Instalar Bibliotecas [ Genérico ]
 def Instalar(pPacote):
     try:
-        subprocess.run(['pip', 'install', pPacote,'--user'], check = True)
+        subprocess.run(['pip', 'install', pPacote,'--user'], check=True)
     except Exception as e:
         FErros.append([pPacote, e])
     
@@ -39,13 +38,8 @@ def VerificandoDependencias():
         import seaborn
     except ModuleNotFoundError:
         Instalar('seaborn') 
-
 VerificandoDependencias()
 
-if FErros:
-    print('Erros:')
-    for lErro in FErros:
-        print(f'Pacote: {lErro[0]}, Erro: {lErro[1]}')
-
-    sys.exit()
-
+print("Erros:")
+for erro in FErros:
+    print(f"Pacote: {erro[0]}, Erro: {erro[1]}")

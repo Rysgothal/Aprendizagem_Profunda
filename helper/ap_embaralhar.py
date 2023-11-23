@@ -31,7 +31,7 @@ def ConfigurarPastasDataSet(pDados: list):
     Helper.CriarPasta(lPastaTreino)
     Helper.CriarPasta(lPastaTeste)
     
-    lTreinoDados, lTesteDados = train_test_split(lDataSet, test_size = 0.5, random_state = 42)
+    lTreinoDados, lTesteDados = train_test_split(lDataSet, test_size = 0.4, random_state = 42)
     
     for lClasse in lDataSet['Classe'].unique():
         Helper.CriarPasta(os.path.join(lPastaTreino, lClasse))
@@ -51,8 +51,8 @@ def EmbaralharDataSet(pTexto: str):
     ConfigurarPastasDataSet(lDados)
     
 def Embaralhar():    
-    with open('helper/dataset.txt', 'r', encoding = 'utf-8') as file:
-        EmbaralharDataSet(file.read())
+    with open('helper/dataset.txt', 'r', encoding = 'utf-8') as lArquivo:
+        EmbaralharDataSet(lArquivo.read())
         
         
 Embaralhar()      

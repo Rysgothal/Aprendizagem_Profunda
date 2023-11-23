@@ -30,6 +30,7 @@ def ConfigurarPastasDataSet(pDados: list):
     lPastaTeste = Helper.DiretorioAtual() + '/helper/Textos/test'
     Helper.CriarPasta(lPastaTreino)
     Helper.CriarPasta(lPastaTeste)
+    Helper.CriarPasta(Helper.DiretorioAtual() + '/Models')
     
     lTreinoDados, lTesteDados = train_test_split(lDataSet, test_size = 0.4, random_state = 42)
     

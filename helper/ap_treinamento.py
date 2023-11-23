@@ -8,30 +8,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
+def CarregarLinguagemDataSet(pCaminho: str):
+    lFrases = []
+    lLingua = []
 
-def load_language_dataset(folder_path):
-    texts = []
-    labels = []
+    for lCategoria in os.listdir(pCaminho):
+        lCaminhoCategoria = os.path.join(pCaminho, lCategoria)
 
-    for category in os.listdir(folder_path):
-        category_path = os.path.join(folder_path, category)
-        if os.path.isdir(category_path):
-            for file_name in os.listdir(category_path):
-                file_path = os.path.join(category_path, file_name)
-                if os.path.isfile(file_path):
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        text = file.read()
-                        texts.append(text)
-                        labels.append(category)
+        if not os.path.isdir(lCaminhoCategoria):
+            continue
 
-    return texts, labels
+        for lNomeArquivo in os.listdir(lCaminhoCategoria):
+            lCaminhoArquivo = os.path.join(lCaminhoCategoria, lNomeArquivo)
+
+            if not os.path.isfile(lCaminhoArquivo):
+                continue
+        
+            with open(lCaminhoArquivo, 'r', encoding = 'utf-8') as lArquivo:
+                lFrases.append(lArquivo.read())
+                lLingua.append(lCategoria)
+
+    return lFrases, lLingua
+
 # Carregando o dataset de treinamento
 train_folder_path = os.path.dirname(os.path.realpath(__file__)) + "/Textos/train"
-train_texts, train_labels = load_language_dataset(train_folder_path)
+train_texts, train_labels = CarregarLinguagemDataSet(train_folder_path)
 
 # Carregando o dataset de teste
 test_folder_path = os.path.dirname(os.path.realpath(__file__)) + "/Textos/train"
-test_texts, test_labels = load_language_dataset(test_folder_path)
+test_texts, test_labels = CarregarLinguagemDataSet(test_folder_path)
 
 
 # Combine os textos e rótulos de treinamento e teste

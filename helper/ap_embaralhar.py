@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from ap_helper import Helper
+from helper.ap_helper import Helper
 
 def ConfigurarDataSet(pTexto):
     lLinhas = pTexto.split('\n') 
@@ -51,7 +51,7 @@ def EmbaralharDataSet(pTexto: str):
     ConfigurarPastasDataSet(lDados)
     
 def Embaralhar():    
-    with open("dataset.txt", "r", encoding="utf-8") as file:
+    with open('helper/dataset.txt', 'r', encoding = 'utf-8') as file:
         EmbaralharDataSet(file.read())
         
         

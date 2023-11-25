@@ -7,11 +7,7 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-
-try:
-    from helper.ap_helper import Helper 
-except:
-    from ap_helper import Helper
+from helper.ap_helper import Helper 
 
 def CarregarLinguagemDataSet(pCaminho: str):
     lFrases = []
@@ -68,26 +64,6 @@ lLinguasTesteCodificado = lCodificarLinguas.transform(lTesteLinguas)
 lLinguasTreinoCodificado = lCodificarLinguas.transform(lTreinoLinguas)
 lSequenciasTreino = lTokenizador(lTreinoFrases)
 lTamanhoMaximo = max(len(lSeq) for lSeq in lSequenciasTreino)
-
-# def Helper.MostrarPerdaPlot(history, model_name):
-#     plt.plot(history.history['loss'], label='train')
-#     plt.plot(history.history['val_loss'], label='validation')
-#     plt.title(f'{model_name} - Loss')
-#     plt.xlabel('Epoch')
-#     plt.ylabel('Loss')
-#     plt.legend()
-#     plt.show()
-    
-# def Helper.MostrarMatrixConfusao(cm, classes, model_name):
-#     cm_df = pd.DataFrame(cm, index=classes[:len(cm)], columns=classes[:len(cm)])
-    
-#     plt.figure(figsize=(10, 8))
-#     sns.heatmap(cm_df, annot=True, cmap='Blues')  
-#     plt.title(f'{model_name} - Confusion Matrix')
-#     plt.xlabel('Predicted')
-#     plt.ylabel('True')
-#     plt.show()
-
     
 # Modelo ANNs (Redes Neurais Artificiais) com dropout
 
@@ -208,134 +184,132 @@ for lNumerosFitros in lNumeroFiltrosLista:
 
 # Variação de outro hiperparâmetro para os modelos CNN
 # Modelo 1 com tamanho de filtro diferente
-filter_sizes_list = [3, 5, 7]
+lTamanhoFiltroLista = [3, 5, 7]
 
-for filter_size in filter_sizes_list:
-    # Crie um modelo CNN com a variação do tamanho do filtro
-    model_filter_size = tf.keras.Sequential()
-    model_filter_size.add(tf.keras.layers.Embedding(input_dim=lTamanhoVocabulario, output_dim=32, input_length=len(lSequencias[0])))
-    model_filter_size.add(tf.keras.layers.Conv1D(128, filter_size, activation='relu'))  # Varie o tamanho do filtro conforme desejado
-    model_filter_size.add(tf.keras.layers.GlobalMaxPooling1D())
-    model_filter_size.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
-    model_filter_size.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+for lTamanhoFiltro in lTamanhoFiltroLista:
+    # Criando um modelo CNN com a variação do tamanho do filtro
+    lModeloTamanhoFiltro = tf.keras.Sequential()
+    lModeloTamanhoFiltro.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
+    lModeloTamanhoFiltro.add(tf.keras.layers.Conv1D(128, lTamanhoFiltro, activation = 'relu'))  # Variando o tamanho do filtro conforme desejado
+    lModeloTamanhoFiltro.add(tf.keras.layers.GlobalMaxPooling1D())
+    lModeloTamanhoFiltro.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+    lModeloTamanhoFiltro.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-    # Treine o modelo
-    history_cnn_filter_size=model_filter_size.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
+    # Treinando o modelo
+    lHistoricoFiltroTamanhoCNN = lModeloTamanhoFiltro.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
 
-    # Salve o modelo com um nome indicando a variação do hiperparâmetro
-    model_filter_size.save(Helper.DiretorioAtual() + f'/Models/modelCNN_filter_size_{filter_size}.keras')
+    # Salvando o modelo com um nome indicando a variação do hiperparâmetro
+    lModeloTamanhoFiltro.save(Helper.DiretorioAtual() + f'/Models/modelCNN_filter_size_{lTamanhoFiltro}.keras')
 
     # Avaliação do modelo
-    lPredicaoY = model_filter_size.predict(lSequenciasTeste)
+    lPredicaoY = lModeloTamanhoFiltro.predict(lSequenciasTeste)
     lPredicaoClassesY = np.argmax(lPredicaoY, axis=1)
     lAcuracia = accuracy_score(lLinguasTesteCodificado, lPredicaoClassesY)
-    print(f"Acurácia do modelo CNN (filtro de tamanho {filter_size}): {lAcuracia}")
-    Helper.MostrarPerdaPlot(history_cnn_filter_size, 'CNN Filter Size Model')
+    print(f"Acurácia do modelo CNN (filtro de tamanho {lTamanhoFiltro}): {lAcuracia}")
+    Helper.MostrarPerdaPlot(lHistoricoFiltroTamanhoCNN, 'CNN Filter Size Model')
     lClassesUnique = np.unique(lLinguas)
     lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoClassesY)
     Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'CNN Filter Size Model')
     
 
 # Modelo 2 com tamanho do passo diferente
-filter_stride_list = [1, 2, 3]
+lFiltroPassosLista = [1, 2, 3]
 
-for filter_stride in filter_stride_list:
-    # Crie um modelo CNN com a variação do tamanho do passo
-    model_filter_stride = tf.keras.Sequential()
-    model_filter_stride.add(tf.keras.layers.Embedding(input_dim=lTamanhoVocabulario, output_dim=32, input_length=len(lSequencias[0])))
-    model_filter_stride.add(tf.keras.layers.Conv1D(128, 5, strides=filter_stride, activation='relu'))  # Varie o tamanho do passo conforme desejado
-    model_filter_stride.add(tf.keras.layers.GlobalMaxPooling1D())
-    model_filter_stride.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
-    model_filter_stride.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+for lFiltroPasso in lFiltroPassosLista:
+    # Criando um modelo CNN com a variação do tamanho do passo
+    lModeloFiltroPasso = tf.keras.Sequential()
+    lModeloFiltroPasso.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
+    lModeloFiltroPasso.add(tf.keras.layers.Conv1D(128, 5, strides = lFiltroPasso, activation = 'relu'))  # Variando o tamanho do passo conforme desejado
+    lModeloFiltroPasso.add(tf.keras.layers.GlobalMaxPooling1D())
+    lModeloFiltroPasso.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+    lModeloFiltroPasso.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-    # Treine o modelo
-    history_cnn_filter_stride=model_filter_stride.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
+    # Treinando o modelo
+    lHistoricoFiltroCNNPasso = lModeloFiltroPasso.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
 
-    # Salve o modelo com um nome indicando a variação do hiperparâmetro
-    model_filter_stride.save(Helper.DiretorioAtual() + f'/Models/modelCNN_filter_stride_{filter_stride}.keras')
+    # Salvando o modelo com um nome indicando a variação do hiperparâmetro
+    lModeloFiltroPasso.save(Helper.DiretorioAtual() + f'/Models/modelCNN_filter_stride_{lFiltroPasso}.keras')
 
     # Avaliação do modelo
-    lPredicaoY = model_filter_stride.predict(lSequenciasTeste)
-    lPredicaoClassesY = np.argmax(lPredicaoY, axis=1)
+    lPredicaoY = lModeloFiltroPasso.predict(lSequenciasTeste)
+    lPredicaoClassesY = np.argmax(lPredicaoY, axis = 1)
     lAcuracia = accuracy_score(lLinguasTesteCodificado, lPredicaoClassesY)
-    print(f"Acurácia do modelo CNN (passo de tamanho {filter_stride}): {lAcuracia}")
-    Helper.MostrarPerdaPlot(history_cnn_filter_stride,'CNN Filter Stride Model')
+    print(f"Acurácia do modelo CNN (passo de tamanho {lFiltroPasso}): {lAcuracia}")
+    Helper.MostrarPerdaPlot(lHistoricoFiltroCNNPasso , 'CNN Filter Stride Model')
     lClassesUnique = np.unique(lLinguas)
     lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoClassesY)
     Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'CNN Filter Stride Model')
 
-
-unique, counts = np.unique(lLinguasTesteCodificado, return_counts=True)
-print("Distribuição das classes no conjunto de teste:")
-print(dict(zip(unique, counts)))
 # Modelo DNNs (Rede Neural Profunda) com número de camadas ocultas
-model_layers = tf.keras.Sequential(name="model_layers")
-model_layers.add(tf.keras.layers.Input(shape=(len(lSequencias[0]),)))  # Altere o tamanho da sequência de acordo
-model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
-model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
-model_layers.add(tf.keras.layers.Dense(64, activation='relu'))
-model_layers.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
-model_layers.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# Treine e avalie o modelo model_layers
-history_dnn_ocult=model_layers.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
-y_pred_layers = model_layers.predict(lSequenciasTeste)
-y_pred_classes_layers = np.argmax(y_pred_layers, axis=1)
-accuracy_layers = accuracy_score(lLinguasTesteCodificado, y_pred_classes_layers)
-print(f"Acurácia do modelo model_layers: {accuracy_layers}")
-Helper.MostrarPerdaPlot(history_dnn_ocult, 'DNN Ocult Model')
+LModeloLayers = tf.keras.Sequential(name = "model_layers")
+LModeloLayers.add(tf.keras.layers.Input(shape = (len(lSequencias[0]), )))  # Alterando o tamanho da sequência de acordo
+LModeloLayers.add(tf.keras.layers.Dense(64, activation = 'relu'))
+LModeloLayers.add(tf.keras.layers.Dense(64, activation = 'relu'))
+LModeloLayers.add(tf.keras.layers.Dense(64, activation = 'relu'))
+LModeloLayers.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+LModeloLayers.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+
+# Treinando e avaliando o modelo Model_Layers
+lHistoricoDNNOCamadaOculta = LModeloLayers.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+lPredicaoLayersY = LModeloLayers.predict(lSequenciasTeste)
+lPredicaoLayersYClasses = np.argmax(lPredicaoLayersY, axis = 1)
+lAcuraciaLayers = accuracy_score(lLinguasTesteCodificado, lPredicaoLayersYClasses)
+print(f"Acurácia do modelo LModeloLayers: {lAcuraciaLayers}")
+Helper.MostrarPerdaPlot(lHistoricoDNNOCamadaOculta, 'DNN Ocult Model')
 lClassesUnique = np.unique(lLinguas)
-lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, y_pred_classes_layers)
+lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoLayersYClasses)
 Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'DNN Ocult Model')
-# Salve o modelo model_layers no diretório atual
-model_layers.save(Helper.DiretorioAtual() + '/Models/modelDNN_layers.keras')
+# Salvando o modelo LModeloLayers no diretório atual
+LModeloLayers.save(Helper.DiretorioAtual() + '/Models/modelDNN_layers.keras')
 
 
 # Modelo DNNs (Rede Neural Profunda) com diferentes funções de ativação nas camadas ocultas
-modelDNN = tf.keras.Sequential(name="modelDNN")
-modelDNN.add(tf.keras.layers.Input(shape=(len(lSequencias[0]),)))  # Altere o tamanho da sequência de acordo
-modelDNN.add(tf.keras.layers.Dense(64, activation='relu'))
-modelDNN.add(tf.keras.layers.Dense(64, activation='tanh'))  # Varie a função de ativação conforme desejado
-modelDNN.add(tf.keras.layers.Dense(64, activation='sigmoid'))
-modelDNN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
-modelDNN.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# Treine e avalie o modelo modelDNN
-history_dnn_ocult_ativation=modelDNN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
+lModeloDNN = tf.keras.Sequential(name = "modelDNN")
+lModeloDNN.add(tf.keras.layers.Input(shape=(len(lSequencias[0]),)))  # Alterando o tamanho da sequência de acordo
+lModeloDNN.add(tf.keras.layers.Dense(64, activation = 'relu'))
+lModeloDNN.add(tf.keras.layers.Dense(64, activation = 'tanh'))  # Variando a função de ativação conforme desejado
+lModeloDNN.add(tf.keras.layers.Dense(64, activation = 'sigmoid'))
+lModeloDNN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+lModeloDNN.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-y_pred_dnn = modelDNN.predict(lSequenciasTeste)
-y_pred_classes_dnn = np.argmax(y_pred_dnn, axis=1)
-accuracy_dnn = accuracy_score(lLinguasTesteCodificado, y_pred_classes_dnn)
-print(f"Acurácia do modelo modelDNN: {accuracy_dnn}")
-Helper.MostrarPerdaPlot(history_dnn_ocult_ativation, 'DNN Ocult Ativation Model')
+# Treinando e avaliando o modelo lModeloDNN
+lHistoricoDNNCamadaOculta = lModeloDNN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+
+lDNNPredicaoY = lModeloDNN.predict(lSequenciasTeste)
+lPredicaoDNNClassesY = np.argmax(lDNNPredicaoY, axis = 1)
+lAcuraciaDNN = accuracy_score(lLinguasTesteCodificado, lPredicaoDNNClassesY)
+print(f"Acurácia do modelo lModeloDNN: {lAcuraciaDNN}")
+Helper.MostrarPerdaPlot(lHistoricoDNNCamadaOculta, 'DNN Ocult Ativation Model')
 lClassesUnique = np.unique(lLinguas)
-lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, y_pred_classes_dnn)
+lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoDNNClassesY)
 Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'DNN Ocult Ativation Model')
 
-# Salve o modelo modelDNN
-modelDNN.save(Helper.DiretorioAtual() + '/Models/modelDNN.keras')
+# Salvando o modelo lModeloDNN
+lModeloDNN.save(Helper.DiretorioAtual() + '/Models/lModeloDNN.keras')
 
 
 # Modelo DNNs (Rede Neural Profunda) com variação da taxa de aprendizado e função de ativação
-modelDNN4 = tf.keras.Sequential(name="modelDNN4")
-modelDNN4.add(tf.keras.layers.Input(shape=(len(lSequencias[0]),)))  # Ajuste o tamanho da sequência de acordo
-modelDNN4.add(tf.keras.layers.Dense(64, activation='relu'))  # Mantenha o número de unidades
-modelDNN4.add(tf.keras.layers.Dense(64, activation='relu'))  # Mantenha o número de unidades
-modelDNN4.add(tf.keras.layers.Dense(len(set(lLinguas)), activation='softmax'))
+lModeloDNN4 = tf.keras.Sequential(name = "modelDNN4")
+lModeloDNN4.add(tf.keras.layers.Input(shape = (len(lSequencias[0]),)))  # Ajuste o tamanho da sequência de acordo
+lModeloDNN4.add(tf.keras.layers.Dense(64, activation = 'relu'))  # Mantenha o número de unidades
+lModeloDNN4.add(tf.keras.layers.Dense(64, activation = 'relu'))  # Mantenha o número de unidades
+lModeloDNN4.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
 
 # Configuração personalizada do otimizador com taxa de aprendizado
-custom_optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-modelDNN4.compile(loss='sparse_categorical_crossentropy', optimizer=custom_optimizer, metrics=['accuracy'])
+lOtimizador = tf.keras.optimizers.Adam(learning_rate = 0.001)
+lModeloDNN4.compile(loss = 'sparse_categorical_crossentropy', optimizer = lOtimizador, metrics = ['accuracy'])
 
-# Treine e avalie o modelo
-history_dnn_rate_learn=modelDNN4.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
-lPredicaoY = modelDNN4.predict(lSequenciasTeste)
+# Treinando e avaliando o modelo
+lHistoricoDNNAprendizado = lModeloDNN4.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs=500, batch_size=1, validation_data=(lSequenciasTeste, lLinguasTesteCodificado))
+lPredicaoY = lModeloDNN4.predict(lSequenciasTeste)
 lPredicaoClassesY = np.argmax(lPredicaoY, axis=1)
 lAcuracia = accuracy_score(lLinguasTesteCodificado, lPredicaoClassesY)
-print(f"Acurácia do modelo modelDNN4: {lAcuracia}")
-Helper.MostrarPerdaPlot(history_dnn_rate_learn, 'DNN Rate Learn Model')
+print(f"Acurácia do modelo lModeloDNN4: {lAcuracia}")
+Helper.MostrarPerdaPlot(lHistoricoDNNAprendizado, 'DNN Rate Learn Model')
 lClassesUnique = np.unique(lLinguas)
 lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoClassesY)
 Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'DNN Rate Learn Model')
 
-# Salve o modelo
-modelDNN4.save(Helper.DiretorioAtual() + '/Models/modelDNN4.keras')
+# Salvando o modelo
+lModeloDNN4.save(Helper.DiretorioAtual() + '/Models/lModeloDNN4.keras')
 

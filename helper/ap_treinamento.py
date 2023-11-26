@@ -1,13 +1,9 @@
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
-from helper.ap_helper import Helper 
+from ap_helper import Helper, Modelo 
 
 def CarregarLinguagemDataSet(pCaminho: str):
     lFrases = []
@@ -66,27 +62,36 @@ lSequenciasTreino = lTokenizador(lTreinoFrases)
 lTamanhoMaximo = max(len(lSeq) for lSeq in lSequenciasTreino)
     
 # Modelo ANNs (Redes Neurais Artificiais) com dropout
-
-lModeloDropOut = tf.keras.Sequential()
-lModeloDropOut.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
-lModeloDropOut.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
-lModeloDropOut.add(tf.keras.layers.Dense(64, activation = 'relu'))
-lModeloDropOut.add(tf.keras.layers.Dropout(0.5))
-lModeloDropOut.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
-lModeloDropOut.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+lDropOutModeloANN = Modelo('Modelo_ANN_Dropout')
+lDropOutModeloANN.AdicionarEmbedding(lTamanhoVocabulario, len(lSequencias[0]))
+lDropOutModeloANN.AdicionarPooling()
+lDropOutModeloANN.AdicionarDense()
+lDropOutModeloANN.AdicionarDropOut(0.5)
+lDropOutModeloANN.AdicionarDense(len(set(lLinguas)), 'softmax') 
+lDropOutModeloANN.Compilar('sparse_categorical_crossentropy', 'adam', ['accuracy'])
+# lModeloDropOut = tf.keras.Sequential()
+# lModeloDropOut.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
+# lModeloDropOut.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
+# lModeloDropOut.add(tf.keras.layers.Dense(64, activation = 'relu'))
+# lModeloDropOut.add(tf.keras.layers.Dropout(0.5))
+# lModeloDropOut.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+# lModeloDropOut.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
 # Treinando o modelo usando as sequências de treinamento e rótulos codificados
-lHistoricoDropOut = lModeloDropOut.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1,
-    validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+lHistoricoDropOutANN = lDropOutModeloANN.Treinamento(lSequenciasTreino, lLinguasTreinoCodificado, 
+                                                    (lSequenciasTeste, lLinguasTesteCodificado))
+
+# lHistoricoDropOut = lDropOutModeloANN.Modelo.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1,
+#     validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
 
 # Avaliação do modelo usando os dados de teste
-lDropOutPredicaoY = lModeloDropOut.predict(lSequenciasTeste)
+lDropOutPredicaoY = lDropOutModeloANN.Modelo.predict(lSequenciasTeste)
 lDropOutPredicaoClassesY = np.argmax(lDropOutPredicaoY, axis = 1)
 lDropOutAcuracia = accuracy_score(lLinguasTesteCodificado, lDropOutPredicaoClassesY)
 print(f"Acurácia do modelo ANNs com dropout: {lDropOutAcuracia}")
 
 # Plotando o gráfico de perda e a matriz de confusão
-Helper.MostrarPerdaPlot(lHistoricoDropOut, 'ANN Dropout Model')
+Helper.MostrarPerdaPlot(lHistoricoDropOutANN, 'ANN Dropout Model')
 
 lClassesUnique = np.unique(lLinguas)
 print("Classes: ", lClassesUnique)
@@ -94,8 +99,8 @@ lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lDropOutPredicaoClas
 print("Matriz:", lMatrizConfusao)
 Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'ANN Dropout Model')
 
-lModeloDropOut.save(Helper.DiretorioAtual() + '/Models/modelANNs_dropout.keras')
-
+# lDropOutModeloANN.Modelo.save(Helper.DiretorioAtual() + '/Models/modelANNs_dropout.keras')
+lDropOutModeloANN.Salvar('modelANNs_dropout')
 
 # Variações de hiperparâmetros para o modelo ANNs
 lUnidadesANN = [32, 64, 128]
@@ -103,17 +108,26 @@ lUnidadesANN = [32, 64, 128]
 # Criando, treinando e avaliando modelo ANNs para cada variação de unidades ANNs
 for lUnidadeANN in lUnidadesANN:
     # Criando um modelo ANNs com a variação do número de unidades ANNs
-    lModeloANN = tf.keras.Sequential()
-    lModeloANN.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
-    lModeloANN.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
-    lModeloANN.add(tf.keras.layers.Dense(lUnidadeANN, activation = 'relu'))
-    lModeloANN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
-    lModeloANN.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+    lModeloANN = Modelo('Modelo_ANN_Numero_Neuronios')
+    lModeloANN.AdicionarEmbedding(lTamanhoVocabulario, len(lSequencias[0]))
+    lModeloANN.AdicionarPooling()
+    lModeloANN.AdicionarDense(lUnidadeANN)
+    lModeloANN.AdicionarDense(len(set(lLinguas)), 'softmax')
+    lModeloANN.Compilar('sparse_categorical_crossentropy', 'adam', ['accuracy'])
+    lHistoricoANN = lModeloANN.Treinamento(lSequenciasTreino, lLinguasTreinoCodificado,
+                          (lSequenciasTeste, lLinguasTesteCodificado))
+
+    # lModeloANN = tf.keras.Sequential()
+    # lModeloANN.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
+    # lModeloANN.add(tf.keras.layers.GlobalAveragePooling1D())  # Camada de pooling
+    # lModeloANN.add(tf.keras.layers.Dense(lUnidadeANN, activation = 'relu'))
+    # lModeloANN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+    # lModeloANN.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
     
     # Treinando o modelo
-    lHistoricoANN = lModeloANN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+    # lHistoricoANN = lModeloANN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
     
-    lPredicaoY = lModeloANN.predict(lSequenciasTeste)
+    lPredicaoY = lModeloANN.Modelo.predict(lSequenciasTeste)
     lPredicaoClassesY = np.argmax(lPredicaoY, axis = 1)
     lAcuracia = accuracy_score(lLinguasTesteCodificado, lPredicaoClassesY)
 
@@ -124,22 +138,33 @@ for lUnidadeANN in lUnidadesANN:
     lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoClassesY)
     Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'ANN Model')
 
-    lModeloANN.save(Helper.DiretorioAtual() + f'/Models/modelANNs_{lUnidadeANN}.keras')
+    lModeloANN.Salvar(f'modelANNs_{lUnidadeANN}')
+
 
 
 # Terceiro Modelo ANNs com Camada LSTM
-lModeleCamadaLSTM = tf.keras.Sequential()
-lModeleCamadaLSTM.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
-lModeleCamadaLSTM.add(tf.keras.layers.LSTM(64, return_sequences = True))  # Camada LSTM
-lModeleCamadaLSTM.add(tf.keras.layers.GlobalMaxPooling1D())  # Camada de pooling
-lModeleCamadaLSTM.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
-lModeleCamadaLSTM.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+lLSTMModeloANN = Modelo('Modelo_ANN_LSTM')
+lLSTMModeloANN.AdicionarEmbedding(lTamanhoVocabulario, len(lSequencias[0]))
+lLSTMModeloANN.AdicionarLSTM(64, True)
+lLSTMModeloANN.AdicionarPooling()
+lLSTMModeloANN.AdicionarDense(len(set(lLinguas)), 'softmax')
+lLSTMModeloANN.Compilar('sparse_categorical_crossentropy', 'adam', ['accuracy'])
+
+lHistoricoANNCamadaLSTM = lLSTMModeloANN.Treinamento(lSequenciasTreino, lLinguasTreinoCodificado,
+                                                    (lSequenciasTeste, lLinguasTesteCodificado))
+
+# lModeleCamadaLSTM = tf.keras.Sequential()
+# lModeleCamadaLSTM.add(tf.keras.layers.Embedding(input_dim = lTamanhoVocabulario, output_dim = 32, input_length = len(lSequencias[0])))
+# lModeleCamadaLSTM.add(tf.keras.layers.LSTM(64, return_sequences = True))  # Camada LSTM
+# lModeleCamadaLSTM.add(tf.keras.layers.GlobalMaxPooling1D())  # Camada de pooling
+# lModeleCamadaLSTM.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+# lModeleCamadaLSTM.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
 # Treinando o modelo LSTM
-lHistoricoANNCamadaLSTM = lModeleCamadaLSTM.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+# lHistoricoANNCamadaLSTM = lModeleCamadaLSTM.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
 
 # Avaliando do modelo LSTM
-lPredicaoYCamadaLSTM = lModeleCamadaLSTM.predict(lSequenciasTeste)
+lPredicaoYCamadaLSTM = lLSTMModeloANN.Modelo.predict(lSequenciasTeste)
 lPredicaoYCamadaLSTMClasses = np.argmax(lPredicaoYCamadaLSTM, axis = 1)
 
 lAcuraciaLSTM = accuracy_score(lLinguasTesteCodificado, lPredicaoYCamadaLSTMClasses)
@@ -150,7 +175,7 @@ lClassesUnique = np.unique(lLinguas)
 lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoYCamadaLSTMClasses)
 Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'ANN LSTM Model')
 
-lModeleCamadaLSTM.save(Helper.DiretorioAtual() + '/Models/modelANNs_lstm.keras')
+lLSTMModeloANN.Salvar(f'modelANNs_lstm')
 
 # Variações de hiperparâmetros para o modelo CNN
 lNumeroFiltrosLista = [64, 128, 256]
@@ -158,18 +183,26 @@ lNumeroFiltrosLista = [64, 128, 256]
 # Criando, treinando e avaliando um modelo CNN para cada variação de número de filtros
 for lNumerosFitros in lNumeroFiltrosLista:
     # Criando um modelo CNN com a variação do número de filtros
-    lModeloCNN = tf.keras.Sequential()
-    lModeloCNN.add(tf.keras.layers.Embedding(input_dim=lTamanhoVocabulario, output_dim=32, input_length=len(lSequencias[0])))
-    lModeloCNN.add(tf.keras.layers.Conv1D(lNumerosFitros, 5, activation = 'relu'))
-    lModeloCNN.add(tf.keras.layers.GlobalMaxPooling1D())
-    lModeloCNN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
-    lModeloCNN.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
+    lModeloCNN = Modelo('Modelo_CNN_Numero_Filtros')
+    lModeloCNN.AdicionarEmbedding(lTamanhoVocabulario, len(lSequencias[0]))
+    lModeloCNN.AdicionarConvUnidirecional(pNumFiltros = lNumerosFitros, pTamanhoConv = 5, pAtivacao = 'relu')
+    lModeloCNN.AdicionarPooling()
+    lModeloCNN.AdicionarDense(len(set(lLinguas)), 'softmax')
+    lModeloCNN.Compilar('sparse_categorical_crossentropy', 'adam', ['accuracy'])
+    lHistoricoCNNFiltro = lModeloCNN.Treinamento(lSequenciasTreino, lLinguasTreinoCodificado, 
+                                                 (lSequenciasTeste, lLinguasTesteCodificado))
+    # lModeloCNN = tf.keras.Sequential()
+    # lModeloCNN.add(tf.keras.layers.Embedding(input_dim=lTamanhoVocabulario, output_dim=32, input_length=len(lSequencias[0])))
+    # lModeloCNN.add(tf.keras.layers.Conv1D(lNumerosFitros, 5, activation = 'relu'))
+    # lModeloCNN.add(tf.keras.layers.GlobalMaxPooling1D())
+    # lModeloCNN.add(tf.keras.layers.Dense(len(set(lLinguas)), activation = 'softmax'))
+    # lModeloCNN.compile(loss = 'sparse_categorical_crossentropy', optimizer = 'adam', metrics = ['accuracy'])
 
-    # Treinando o modelo
-    lHistoricoCNNFiltro = lModeloCNN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
+    # # Treinando o modelo
+    # lHistoricoCNNFiltro = lModeloCNN.fit(lSequenciasTreino, lLinguasTreinoCodificado, epochs = 500, batch_size = 1, validation_data = (lSequenciasTeste, lLinguasTesteCodificado))
 
     # Avaliando do modelo
-    lPredicaoY = lModeloCNN.predict(lSequenciasTeste)
+    lPredicaoY = lModeloCNN.Modelo.predict(lSequenciasTeste)
     lPredicaoClassesY = np.argmax(lPredicaoY, axis=1)
     
     lAcuracia = accuracy_score(lLinguasTesteCodificado, lPredicaoClassesY)
@@ -180,11 +213,11 @@ for lNumerosFitros in lNumeroFiltrosLista:
     lMatrizConfusao = confusion_matrix(lLinguasTesteCodificado, lPredicaoClassesY)
     Helper.MostrarMatrixConfusao(lMatrizConfusao, lClassesUnique, 'CNN Filter Model')
     
-    lModeloCNN.save(Helper.DiretorioAtual() + f'/Models/modelCNN_{lNumerosFitros}.keras')
+    lModeloCNN.Salvar(f'modelCNN_{lNumerosFitros}')
 
 # Variação de outro hiperparâmetro para os modelos CNN
 # Modelo 1 com tamanho de filtro diferente
-lTamanhoFiltroLista = [3, 5, 7]
+lTamanhoFiltroLista = [3, 5, 7] ## to-do: Continuar refatoranndo aqui
 
 for lTamanhoFiltro in lTamanhoFiltroLista:
     # Criando um modelo CNN com a variação do tamanho do filtro

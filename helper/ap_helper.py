@@ -45,7 +45,7 @@ class Modelo():
         
         self.Modelo = lModelo
 
-    def AdicionarInput(self, pShape: int):
+    def AdicionarInput(self, pShape: tuple[int]):
         self.Modelo.add(tf.keras.layers.Input(shape = pShape))
 
     def AdicionarPooling(self):
@@ -59,12 +59,6 @@ class Modelo():
 
     def AdicionarLSTM(self, pValor: int, pRetornar: bool):
         self.Modelo.add(tf.keras.layers.LSTM(pValor, return_sequences = pRetornar))
-
-    # def AdicionarConvUnidirecional(self, pNumFiltros: int, pAtivacao: str):
-    #     self.Modelo.add(tf.keras.layers.Conv1D(filters = pNumFiltros, activation = pAtivacao))
-
-    # def AdicionarConvUnidirecional(self, pNumFiltros: int, pTamanhoConv: int, pAtivacao: str):
-    #     self.Modelo.add(tf.keras.layers.Conv1D(filters = pNumFiltros, kernel_size = pTamanhoConv, activation = pAtivacao))
 
     def AdicionarConvUnidirecional(self, pNumFiltros: int, pAtivacao: str, pTamanhoConv: int = None, pPasso: int = None):
         if pPasso is not None and pTamanhoConv is not None:

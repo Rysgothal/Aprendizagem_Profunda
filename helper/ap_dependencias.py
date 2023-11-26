@@ -18,6 +18,11 @@ def VerificandoDependencias():
     print('Verificando pacotes...\n')
     
     try:
+        import pandas
+    except ModuleNotFoundError:
+        Instalar('pandas')    
+        
+    try:
         import sklearn 
     except ModuleNotFoundError:
         Instalar('scikit-learn') 
@@ -26,15 +31,12 @@ def VerificandoDependencias():
         import tensorflow
     except ModuleNotFoundError:
         Instalar('tensorflow')        
+        
     try:
         import numpy
     except ModuleNotFoundError:
         Instalar('numpy')
         
-    try:
-        import pandas
-    except ModuleNotFoundError:
-        Instalar('pandas')    
     try:
         import seaborn
     except ModuleNotFoundError:

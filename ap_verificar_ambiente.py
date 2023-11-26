@@ -25,6 +25,8 @@ def InstalarConda():
         
         subprocess.run(['clear'])
         print('"Conda" foi instalado com sucesso.')
+        print('Rode novamente o programa em outro terminal...')
+        sys.exit()
     except Exception as e:
         print(f'Falha ao instalar o gerenciador de pacotes "Conda", tente novamente.\n {e}')
 
